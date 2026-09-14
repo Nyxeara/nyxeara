@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="t d">
+<title id="t">Nyxeara security mark</title><desc id="d">Chrome Fleur-de-lis inspired Nyxeara mark on an OLED-black background.</desc>
+<defs><linearGradient id="c" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".32" stop-color="#777"/><stop offset=".56" stop-color="#fafafa"/><stop offset="1" stop-color="#666"/></linearGradient></defs>
+<rect width="256" height="256" rx="32" fill="#050505"/>
+<path fill="url(#c)" d="M128 30c-11 0-20 7-24 18l-10 28-29-19c-11-7-25-2-29 10l-11 34c-3 10 1 20 10 26l29 19-24 16c-9 6-13 17-9 27l11 34c4 12 18 17 29 10l29-19 10 28c4 11 13 18 24 18s20-7 24-18l10-28 29 19c11 7 25 2 29-10l11-34c4-10 0-21-9-27l-24-16 29-19c9-6 13-16 10-26l-11-34c-4-12-18-17-29-10l-29 19-10-28c-4-11-13-18-24-18z"/>
+</svg>

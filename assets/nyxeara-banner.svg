@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 520" role="img" aria-labelledby="t d">
+<title id="t">Nyxeara — Dynamic Application Security Testing</title>
+<desc id="d">A dark premium technical banner for Nyxeara, featuring a chrome security mark and restrained crimson accents.</desc>
+<defs>
+  <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".25" stop-color="#777"/><stop offset=".52" stop-color="#f4f4f4"/><stop offset=".8" stop-color="#68686d"/><stop offset="1" stop-color="#fff"/></linearGradient>
+  <radialGradient id="glow"><stop stop-color="#dc2626" stop-opacity=".20"/><stop offset="1" stop-color="#dc2626" stop-opacity="0"/></radialGradient>
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#fff" stroke-opacity=".045"/></pattern>
+</defs>
+<rect width="1600" height="520" fill="#050505"/>
+<rect width="1600" height="520" fill="url(#grid)"/>
+<circle cx="1430" cy="100" r="430" fill="url(#glow)"/>
+<path d="M0 420H1600" stroke="#dc2626" stroke-opacity=".28"/>
+<path d="M0 421H1080" stroke="#dc2626" stroke-opacity=".75"/>
+<g transform="translate(108 108) scale(1.55)" fill="url(#chrome)" opacity=".96">
+ <path d="M84 0c-8 0-15 5-18 13l-7 19-21-14C30 12 20 15 17 24l-8 25c-2 7 1 15 8 19l22 14-18 12c-6 4-9 12-7 19l8 26c3 9 13 13 21 8l21-14 7 19c3 8 10 13 18 13s15-5 18-13l7-19 21 14c8 5 18 1 21-8l8-26c2-7-1-15-7-19l-18-12 22-14c7-4 10-12 8-19l-8-25c-3-9-13-12-21-7L94 32l-7-19C84 5 84 0 84 0z"/>
+</g>
+<text x="420" y="210" fill="#f1f1f1" font-family="Arial,Helvetica,sans-serif" font-size="72" font-weight="700" letter-spacing="12">NYXEARA</text>
+<text x="425" y="280" fill="#b8b8bd" font-family="Arial,Helvetica,sans-serif" font-size="27" letter-spacing="4">DYNAMIC APPLICATION SECURITY TESTING</text>
+<text x="425" y="340" fill="#dc2626" font-family="Arial,Helvetica,sans-serif" font-size="23" font-weight="700" letter-spacing="3">EVIDENCE, NOT GUESSES.</text>
+<text x="425" y="405" fill="#6f6f75" font-family="monospace" font-size="16" letter-spacing="2">DISCOVER  /  TEST  /  VERIFY  /  PROVE</text>
+</svg>

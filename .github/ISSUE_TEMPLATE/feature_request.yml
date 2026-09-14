@@ -1,0 +1,19 @@
+name: Feature request
+description: Propose a concrete improvement to the public project surface.
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What user or engineering problem would this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Describe the outcome, not just the implementation.
+    validations:
+      required: true
