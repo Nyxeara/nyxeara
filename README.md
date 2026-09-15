@@ -20,91 +20,79 @@ The platform is built around a simple distinction: **a possible vulnerability is
 
 ## Capabilities
 
-### Dynamic Application Security Testing (DAST)
+### DAST & Scanning Engine
 
-Four scan profiles — quick, standard, deep, full — with configurable crawl depth (1–5), page concurrency, same-domain enforcement, form/script/parameter extraction, technology fingerprinting (31 patterns), and 117 special-path probes. Authenticated scanning supports cookie-based, token-based (JWT/Bearer), HTTP Basic Auth, and session replay workflows.
+Four scan profiles — quick, standard, deep, full — with configurable crawl depth (1–5), page concurrency, same-domain enforcement, form/script/parameter extraction, technology fingerprinting (31 patterns), 117 special-path probes, and ZAP integration. Results persist to tool_executions, tool_results, saved_results, and Phase 5 findings.
 
 ### Vulnerability Detection — 22 Check Families
 
-| Category | Families | Detection Methods |
+| Category | Families | Methods |
 |---|---|---|
 | **Injection** | SQLi (6 DBMS), XSS, LFI, SSRF, RCE, CMDi, SSTI | Error-based, time-based, boolean blind, UNION, content indicators, response size diff, DOM sink matching |
-| **Auth & Access** | JWT attacks, CSRF, OAuth, session attacks, password spraying, MFA bypass, token manipulation, brute force | Response status + body analysis per crafted path/header |
+| **Auth & Access** | JWT attacks, CSRF, OAuth, session attacks, password spraying, MFA bypass, token manipulation | 8-auth-category family with response status + body analysis |
 | **Web & API** | CORS (15 origin probes), open redirect (24 payloads), GraphQL introspection/batching/DoS, WebSocket, SOAP/SSE, XXE, prototype pollution, unsafe deserialization | Origin reflection, redirect chain analysis, schema introspection, SSTI pattern matching |
-| **Cloud & Infra** | Cloud metadata (AWS/GCP/Azure), S3 enumeration, container escape, K8s discovery, IAM misconfig, cloud login portals | Target-specific payloads with response fingerprinting |
-| **Discovery** | Admin panels, backup files, hidden files, API endpoints, debug paths, config exposures, VCS, log files | HTTP 200 + body analysis on 100+ common paths |
+| **Cloud & Infra** | Cloud metadata (AWS/GCP/Azure), S3 enumeration, container escape, K8s discovery, IAM misconfig | Target-specific payloads with response fingerprinting |
+| **Discovery** | Admin panels, backup files, hidden files, API endpoints, debug paths, config exposures, VCS, logs | 100+ common paths with HTTP 200 + body analysis |
 | **Headers & Config** | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, cookie flags (Secure/HttpOnly/SameSite), CORS wildcard | Header presence + value validation |
-| **DNS** | Zone transfer, subdomain enumeration, DNS records, DNSSEC, wildcards | Google DNS-over-HTTPS resolution |
 | **Compliance** | PCI DSS, HIPAA, GDPR, SOC2, ISO 27001 | Security control presence validation |
 
-**Payload count:** 1,500+ injection vectors across individual checks (330+) and family payloads (1,200+ from `payloads.json`).
+**Payload count:** 1,500+ injection vectors across 22 check files (9 individual + 13 families from payloads.json).
+
+### Attack-Surface Discovery
+
+BFS crawling (depth 1–5, configurable concurrency) extracting forms, scripts, parameters, and links. Technology fingerprinting covering 31 platforms and frameworks. 117 special paths probed. Surface enumerator reads DB entities and tool outputs to produce prioritized targets using scoring based on port count, endpoint density, API endpoints, and finding severity.
 
 ### WAF Detection & Evasion
 
-Dedicated WAF engine with fingerprinting, evasion payload generation (encoding, case mutation, parser-aware variants), circuit breaker monitoring, and automated WAF rule generation from scan findings. Accessible through a dedicated UI with 18 engine controls.
+Dedicated WAF engine with fingerprinting, evasion payload generation (encoding, case mutation, parser-aware variants), circuit breaker monitoring, and automated defense rule generation from scan findings. Accessible through a dedicated UI with 18 engine controls. Backend modules: waf_detect.py, waf_bypass.py, waf_generator.py, waf_fingerprint.py, waf_block_detect.py.
 
-**Evidence:** `POST /api/waf-engine/fingerprint`, `POST /api/waf-engine/evasion`, `GET /api/waf-engine/findings`, `GET /api/waf-engine/circuit-breaker`, `POST /api/defense/waf-rules`, `POST /api/waf-engine/start`
+### OAST — Out-of-Band Application Security Testing
 
-### OAST — Out-of-Bound Application Security Testing
+Configurable OAST callback listeners (default port 5555) for blind vulnerability detection. Start/stop/poll APIs plus a collaborator system with URL generation and 3-second polling. Captured interactions display source IP, method, path, and protocol. Supports blind SSRF, blind XXE, OOB RCE verification.
 
-Configurable OAST callback listeners for detecting blind and deferred vulnerabilities (blind SSRF, XXE, SQLi, RCE). The collaborator system generates callback URLs, polls for interactions at 3-second intervals, and displays source IP, method, path, and protocol per captured callback.
+### Authenticated Security Testing
 
-**Evidence:** `POST /api/oast/start`, `GET /api/oast/callbacks`, `POST /api/oast/stop`, `GET /api/v2/collaborator/generate`, `GET /api/v2/collaborator/poll`
-
-### External Tool Integrations — 22 Tools
-
-Nmap, Gobuster, WPScan, Nikto, ffuf, sqlmap, httpx, WhatWeb, Dirb, Nuclei, Amass, Subfinder, Naabu, DNSRecon, WHOIS, Dig, Curl, OpenSSL, Host, Nslookup, Python3, Ping. Each implements the `ToolIntegration` contract: `validateConfig → buildCommand → parseOutput → getHealth`.
+Cookie-based, token-based (JWT/Bearer), and HTTP Basic Auth strategies. Login form auto-detection from HTML. Auth config auto-detection from target URL. Extracted sessions replayed through the crawl and scan pipeline. Flask backend provides WebAuthn MFA (graceful degradation), Argon2id password hashing.
 
 ### Evidence & Verification
 
-Every finding carries a complete **evidence chain**: the tool, the target, the captured response, and a **SHA-256 integrity digest** over the finding plus its evidence linkage. The verification lifecycle (6 states) is user-controlled — the scanner does not self-claim "verified." Confidence is attributed to its source (detector-recorded, investigator-recorded, or defaulted). Evidence passes through a redaction pipeline (15 sensitive headers, token patterns, PEM keys) before leaving the server.
+Every finding carries a complete evidence chain: tool, target, captured response, and SHA-256 integrity digest over the finding plus its evidence linkage (computeEvidenceDigest). 6-state verification lifecycle: detected → needs-verification → verification-attempted → verified → false-positive → resolved. Confidence basis attributed to source (detector-recorded, investigator-recorded, or defaulted). Redaction pipeline covers 15 sensitive headers, token patterns, PEM key blocks, and recursive JSON secrets (max depth 12).
 
-**Stages:** `detected → needs-verification → verification-attempted → verified → false-positive → resolved`
+### Investigations & AI Analysis
 
-### Investigation & AI Analysis
-
-Full investigation platform with entity normalization (domain, host, ip, port, url), finding lifecycle management (5 states), deterministic correlation from shared values, conflict detection, duplicate detection, and evidence-grounded AI analysis with mandatory citations. Recommendations reference only real tools from the tool registry.
-
-AI copilot (v2) adds hypotheses, evidence categories, 7 action types (investigate entity, run tool, compare evidence, etc.), and analysis persistence.
-
-**Routes:** 27 investigation API routes covering full CRUD, events, timeline, graph, export, sharing, intelligence.
+27 API routes covering entity normalization (domain, host, ip, port, url), finding lifecycle (5 states), deterministic correlation from shared values, conflict detection, duplicate detection, timeline reconstruction, and access control with sharing. Evidence-grounded AI analysis (571 lines) with mandatory citations, tool registry validation. AI copilot v2 adds hypotheses, evidence categories, 7 action types. STRiX agent integrates DeepSeek v4 Flash with 6 plugin tools.
 
 ### Workflow Automation
 
-Full workflow automation engine with **37+ declarative node types**, persistent in-process execution, wave-by-wave scheduling with bounded concurrency, human approval gates (`WAITING_APPROVAL` state), checkpoint-and-resume, failure strategies (stop/continue/retry/skip), secret injection at execution time, and safe expression evaluation.
+Full workflow engine with 37+ declarative node types, 1,162-line persistent in-process executor, wave-by-wave scheduling, human approval gates (WAITING_APPROVAL), checkpoint-and-resume, failure strategies (stop/continue/retry/skip), secret injection at execution time, safe expression evaluation, and typed data pipeline. Workflow lifecycle: draft, published, archived.
 
-**Lifecycle:** `draft → published → archived`
+### CLI & API
+
+20 CLI API routes covering device auth flow, token login/logout, session health, whoami, finding CRUD with transitions, investigation CRUD, evidence listing, tool registry listing/search/metadata, tool execution, and workflow CRUD. Binary integrity checking (SHA-256 via x-cli-hash) and device fingerprint binding (403 on mismatch). REST API with 26 route groups and structured response envelopes.
 
 ### CI/CD & SARIF
 
-SARIF 2.1.0 export (full schema: tool driver, ruleId, level mapping, physicalLocation/uri), GitHub Code Scanning integration, severity-gated CI/CD exit codes, baseline comparison for regression detection, and signed webhooks.
+SARIF 2.1.0 export (full schema: tool driver, ruleId, level mapping, physicalLocation/uri). Server-side endpoints (GET /scan/{id}/report.sarif, POST /api/enterprise-scan/sarif) and client-side generation. Severity-gated CI/CD exit codes (POST /api/cicd/exit-code). Baseline comparison for regression detection (POST /api/baseline/save, POST /api/baseline/diff). GitHub Code Scanning integration via SARIF upload to Security tab.
 
-**Evidence:** `POST /api/cicd/exit-code`, `POST /api/baseline/save`, `POST /api/baseline/diff`, `GET /scan/{id}/report.sarif`
+### External Tool Integrations — 22 Tools
 
-### CLI
+Nmap, Gobuster, WPScan, Nikto, ffuf, sqlmap, httpx, WhatWeb, Dirb, Nuclei, Amass, Subfinder, Naabu, DNSRecon, WHOIS, Dig, Curl, OpenSSL, Host, Nslookup, Python3, Ping. Each implements the ToolIntegration contract: validateConfig → buildCommand → parseOutput → getHealth.
 
-Full CLI with device auth flow, binary integrity checking (`x-cli-hash`), device fingerprint binding (403 on mismatch). Access to tools, investigations, findings, evidence, and workflows — all via REST.
+### Reporting & Export
 
-**Routes:** 20 CLI API routes covering auth, devices, findings, investigations, evidence, executions, tools, workflows, health.
+Report builder with templates, sections, customizable branding, and export in PDF, HTML, JSON, and CSV formats with automatic secret pattern redaction. DB-derived insights and export via Phase 5 insights engine.
 
-### Administration
+### Webhooks & Notifications
 
-26 admin route directories covering AI, artifacts, audit, billing, config, database, evidence, executions, investigations, jobs, logs, maintenance, notifications, overview, queues, roles, search, security, sessions, storage, system health, tools, users, workers, workflows, and workspaces.
+Webhook engine with 10 event types, delivery tracking, automatic retry, and HMAC-SHA256 signing. Notification dispatch system for investigation events, finding transitions, and tool execution completions.
 
-### API Platform
+### Audit, Access Control & Retention
 
-- 26 route groups with structured response envelopes (`{ok, data, error, meta}`)
-- API key management (`nx_` prefix, SHA-256 hash, scopes, expiration)
-- Webhook engine (10 event types, delivery tracking, retry, HMAC-SHA256 signing)
-- Report builder with PDF/HTML/JSON/CSV export and branding support
-- Data export with automatic secret pattern redaction
-- Configurable data retention policies
-- Activity log / audit trail with user actions and timestamps
-- Notification dispatch system
+Role-based permissions with investigation-level sharing (owner-only by default; read/write/admin shares). Activity log and audit trail with user actions and timestamps. Data retention policies, investigation archiving. Merkle-chained audit log on Flask backend. Admin API covering 26 route directories.
 
-### God's Eye View
+### Deployment Infrastructure
 
-3D photorealistic geospatial globe with 8 live intelligence layers: flights (11,000+ ADS-B), ships (live AIS), satellites (838), CCTV (~800), radio (750+), fires (NASA FIRMS), submarine cables (712), and datacenters (4,351). Token-authenticated proxy with path rewriting.
+Deployment versioning (v9.0.0, schema version tracking, compatibility checks), in-process job queue, job scheduler, artifact storage, worker agent management, autoscaling, resource governor, observability pipeline (counters, gauges, span-based traces, SQLite storage). Flask backend (7,615 lines, 36 Python modules) with SSE streaming scan results and real scan execution.
 
 ## The engineering model
 
@@ -122,26 +110,9 @@ Nyxeara
 
 **Nyxeara** is the product and platform. **Vantage** is the internal engine identity.
 
-## Where it fits
-
-- **DAST** — Test applications from the outside against running systems. Discover exposed functionality, exercise security checks, and retain the evidence behind meaningful results.
-- **Offensive security** — Black-box workflow to examine the attack surface of web applications and APIs without source-code access.
-- **Security research** — Observable behavior first, reproducible evidence second, conclusions after verification.
-- **Engineering** — Security findings into developer workflows through API access, CLI, SARIF, CI/CD gates, signed webhooks, and investigation-oriented evidence.
-
-## Evidence is the product boundary
+## Reproducibility and evidence
 
 **What exactly happened?** A useful finding should be inspectable. Nyxeara preserves the relevant request and response, records verification state, protects evidence integrity with SHA-256, and gives investigators enough context to understand the result rather than simply accepting a severity label.
-
-## Responsible security
-
-Nyxeara is intended for authorized security testing. Only scan systems you own or have explicit permission to test.
-
-For vulnerability disclosures, see [`SECURITY.md`](SECURITY.md).
-
-## Repository scope
-
-This is the **flagship public Nyxeara repository**, separated from private infrastructure, deployment configuration, credentials, and customer data. Planned, experimental, private, or unverified capabilities are not presented as production features here.
 
 ## Explore
 
@@ -157,9 +128,3 @@ This is the **flagship public Nyxeara repository**, separated from private infra
 ## Status
 
 Actively developed. The public surface represents the capabilities appropriate to document publicly; internal roadmaps and private implementation details are intentionally excluded.
-
-<p align="center">
-  <strong>NYXEARA</strong><br />
-  <sub>Dynamic Application Security Testing · Offensive Security · Security Research</sub><br />
-  <sub><em>Evidence, not guesses.</em></sub>
-</p>
